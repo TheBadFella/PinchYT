@@ -30,6 +30,12 @@
           docker-compose
           opencode
           typos
+          nodejs_22
+          yarn
+          erlang_28
+          beam28Packages.elixir
+          beam28Packages.hex
+          beam28Packages.expert
         ];
         shellHook = ''
           lefthook install
