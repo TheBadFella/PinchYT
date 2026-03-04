@@ -71,6 +71,13 @@ defmodule PinchflatWeb.Router do
     get "/healthcheck", HealthController, :check, log: false
   end
 
+  # No auth or CSRF protection for internal API endpoints
+  scope "/api", PinchflatWeb do
+    pipe_through :api
+
+    get "/media/recent_downloads", Api.MediaController, :recent_downloads
+  end
+
   scope "/dev" do
     pipe_through :browser
 
