@@ -108,7 +108,7 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
         end
       end)
 
-    Sources.update_source(source, %{last_indexed_at: DateTime.utc_now()})
+    update_source_after_indexing(source)
     DownloadingHelpers.enqueue_pending_download_tasks(source)
 
     result
@@ -240,5 +240,37 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
     archive_file = create_download_archive_file(source)
 
     [:break_on_existing, download_archive: archive_file]
+  end
+
+  # Updates the source after a successful indexing run. This includes:
+  # - Setting `last_indexed_at` to the current time
+  # - Advancing `download_cutoff_date` to 7 days ago if it's older (or nil)
+  #
+  # Advancing the cutoff date prevents yt-dlp from scanning through months of old videos
+  # on every index. We use 7 days as a buffer to ensure we don't miss any videos that
+  # might have been uploaded just before the cutoff.
+  #
+  # We use `run_post_commit_tasks: false` to avoid triggering side effects like
+  # re-indexing or metadata storage since this is an internal update.
+  defp update_source_after_indexing(source) do
+    new_cutoff_date = Date.utc_today() |> Date.add(-7)
+
+    update_attrs =
+      %{last_indexed_at: DateTime.utc_now()}
+      |> maybe_advance_cutoff_date(source.download_cutoff_date, new_cutoff_date)
+
+    Sources.update_source(source, update_attrs, run_post_commit_tasks: false)
+  end
+
+  defp maybe_advance_cutoff_date(attrs, nil, new_cutoff_date) do
+    Map.put(attrs, :download_cutoff_date, new_cutoff_date)
+  end
+
+  defp maybe_advance_cutoff_date(attrs, current_cutoff_date, new_cutoff_date) do
+    if Date.compare(current_cutoff_date, new_cutoff_date) == :lt do
+      Map.put(attrs, :download_cutoff_date, new_cutoff_date)
+    else
+      attrs
+    end
   end
 end
