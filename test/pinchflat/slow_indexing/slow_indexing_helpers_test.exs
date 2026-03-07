@@ -13,6 +13,7 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpersTest do
   alias Pinchflat.Downloading.MediaDownloadWorker
   alias Pinchflat.SlowIndexing.SlowIndexingHelpers
   alias Pinchflat.SlowIndexing.MediaCollectionIndexingWorker
+  alias Pinchflat.Metadata.SourceMetadataStorageWorker
 
   setup do
     {:ok, %{source: source_fixture()}}
@@ -226,6 +227,63 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpersTest do
       source = Repo.reload!(source)
 
       assert DateTime.diff(DateTime.utc_now(), source.last_indexed_at) < 2
+    end
+
+    test "advances download_cutoff_date to 7 days ago when it's nil" do
+      source = source_fixture(download_cutoff_date: nil)
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+      source = Repo.reload!(source)
+
+      expected_cutoff = Date.utc_today() |> Date.add(-7)
+      assert source.download_cutoff_date == expected_cutoff
+    end
+
+    test "advances download_cutoff_date to 7 days ago when it's older" do
+      old_cutoff = Date.utc_today() |> Date.add(-30)
+      source = source_fixture(download_cutoff_date: old_cutoff)
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+      source = Repo.reload!(source)
+
+      expected_cutoff = Date.utc_today() |> Date.add(-7)
+      assert source.download_cutoff_date == expected_cutoff
+    end
+
+    test "does not change download_cutoff_date when it's more recent than 7 days ago" do
+      recent_cutoff = Date.utc_today() |> Date.add(-3)
+      source = source_fixture(download_cutoff_date: recent_cutoff)
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+      source = Repo.reload!(source)
+
+      assert source.download_cutoff_date == recent_cutoff
+    end
+
+    test "kicks off metadata storage if source images are missing but should be downloaded" do
+      profile = media_profile_fixture(%{download_source_images: true})
+      source = source_fixture(%{media_profile_id: profile.id, poster_filepath: nil, fanart_filepath: nil})
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+
+      assert_enqueued(worker: SourceMetadataStorageWorker, args: %{"id" => source.id})
+    end
+
+    test "does not kick off metadata storage if source images exist" do
+      source = source_with_metadata_attachments()
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+
+      refute_enqueued(worker: SourceMetadataStorageWorker)
+    end
+
+    test "does not kick off metadata storage if profile does not download source images" do
+      profile = media_profile_fixture(%{download_source_images: false})
+      source = source_fixture(%{media_profile_id: profile.id, poster_filepath: nil})
+
+      SlowIndexingHelpers.index_and_enqueue_download_for_media_items(source)
+
+      refute_enqueued(worker: SourceMetadataStorageWorker)
     end
 
     test "enqueues a job for each pending media item" do

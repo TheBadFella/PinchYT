@@ -48,5 +48,9 @@ defmodule Pinchflat.Sources.SourceDeletionWorkerTest do
       assert_raise Ecto.NoResultsError, fn -> Repo.reload!(media_item) end
       refute File.exists?(media_item.media_filepath)
     end
+
+    test "does not blow up if the record doesn't exist" do
+      assert :ok = perform_job(SourceDeletionWorker, %{id: 0})
+    end
   end
 end

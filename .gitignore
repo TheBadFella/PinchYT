@@ -47,3 +47,5 @@ scratchpad.md
 *.db-*
 
 .direnv/
+
+pinchflat.db.backup-*

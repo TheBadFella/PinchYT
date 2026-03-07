@@ -77,6 +77,13 @@ defmodule Pinchflat.SourcesFixtures do
   end
 
   def source_attributes_return_fixture do
+    # Use recent dates to ensure media items pass the download_cutoff_date filter
+    # (which is set to 7 days ago after indexing)
+    today = Date.utc_today()
+    date1 = Date.add(today, -1) |> Calendar.strftime("%Y%m%d")
+    date2 = Date.add(today, -2) |> Calendar.strftime("%Y%m%d")
+    date3 = Date.add(today, -3) |> Calendar.strftime("%Y%m%d")
+
     source_attributes = [
       %{
         id: "video1",
@@ -86,7 +93,7 @@ defmodule Pinchflat.SourcesFixtures do
         description: "desc1",
         aspect_ratio: 1.67,
         duration: 12.34,
-        upload_date: "20210101"
+        upload_date: date1
       },
       %{
         id: "video2",
@@ -96,7 +103,7 @@ defmodule Pinchflat.SourcesFixtures do
         description: "desc2",
         aspect_ratio: 1.67,
         duration: 345.67,
-        upload_date: "20220202"
+        upload_date: date2
       },
       %{
         id: "video3",
@@ -106,7 +113,7 @@ defmodule Pinchflat.SourcesFixtures do
         description: "desc3",
         aspect_ratio: 1.0,
         duration: 678.90,
-        upload_date: "20230303"
+        upload_date: date3
       }
     ]
 

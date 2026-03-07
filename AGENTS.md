@@ -13,36 +13,40 @@ Pinchflat is a self-hosted media management app using:
 
 ## Build/Lint/Test Commands
 
-```bash
-# Enter Nix dev shell (required for tooling)
-nix develop
+**Always use Docker for development and testing.** The project has permission issues when mixing Docker and local builds.
 
+**Database backup:** Use `pinchflat.db.backup-*` files for testing and development with real data. These contain production-like data for debugging issues.
+
+```bash
 # Run all checks (compile, format, credo, tests, sobelow, prettier)
-mix check
+docker compose run --rm phx mix check
 
 # Run tests only
-mix test
+docker compose run --rm phx mix test
 
 # Run a single test file
-mix test test/pinchflat/media_test.exs
+docker compose run --rm phx mix test test/pinchflat/media_test.exs
 
 # Run a specific test by line number
-mix test test/pinchflat/media_test.exs:42
+docker compose run --rm phx mix test test/pinchflat/media_test.exs:42
 
 # Run tests matching a pattern
-mix test --only describe:"list_media_items"
+docker compose run --rm phx mix test --only describe:"list_media_items"
 
 # Format Elixir code
-mix format
+docker compose run --rm phx mix format
 
 # Run Credo linter
-mix credo
+docker compose run --rm phx mix credo
 
 # Security analysis
-mix sobelow --config
+docker compose run --rm phx mix sobelow --config
 
 # Format JS/CSS/YAML/JSON
-yarn run lint:fix
+docker compose run --rm phx yarn run lint:fix
+
+# Start the development server
+docker compose up
 ```
 
 ## Code Style Guidelines
@@ -245,11 +249,13 @@ test/
 
 ## Pre-commit Hooks
 
-Lefthook runs on commit:
+Lefthook runs on commit (configured in `lefthook.yml`):
 
-- `prettier` - JS/CSS/YAML/JSON formatting
-- `mix format` - Elixir formatting
-- `typos` - spell checking
-- `actionlint` - GitHub Actions validation
+- `prettier` - JS/CSS/YAML/JSON formatting (runs in Docker)
+- `mix format` - Elixir formatting (runs in Docker)
+- `typos` - spell checking (runs on host)
+- `actionlint` - GitHub Actions validation (runs on host)
+
+**Note:** `prettier` and `mix format` run inside Docker to avoid permission issues. `typos` and `actionlint` run on the host machine.
 
 Bypass if needed: `git commit --no-verify -m "message"`

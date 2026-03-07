@@ -3,11 +3,12 @@ pre-commit:
   jobs:
     - name: prettier
       glob: '*.{css,html,js,json,md,mjs,ts,yaml,yml}'
-      run: prettier --check --config=.prettierrc.js --ignore-path=.prettierignore --ignore-path=.gitignore {staged_files}
+      run: docker compose run --rm phx yarn run prettier --check --config=.prettierrc.js --ignore-path=.prettierignore --ignore-path=.gitignore {staged_files}
     - name: mix format
       glob: '*.{ex,exs}'
-      run: mix format --check-formatted
+      run: docker compose run --rm phx mix format --check-formatted
     - name: typos
+      glob: '*.{md,txt}'
       run: typos {staged_files}
     - name: actionlint
       glob: '.github/workflows/*.{yml,yaml}'

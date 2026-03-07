@@ -336,6 +336,11 @@ defmodule Pinchflat.Sources do
       {_, %{original_url: _}} ->
         SourceMetadataStorageWorker.kickoff_with_task(source)
 
+      # If the media_profile_id has changed, re-fetch metadata to potentially
+      # download source images if the new profile has download_source_images enabled
+      {_, %{media_profile_id: _}} ->
+        SourceMetadataStorageWorker.kickoff_with_task(source)
+
       _ ->
         :ok
     end
