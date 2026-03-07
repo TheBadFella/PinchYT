@@ -565,6 +565,16 @@ defmodule Pinchflat.SourcesTest do
 
       refute_enqueued(worker: SourceMetadataStorageWorker)
     end
+
+    test "updating will kickoff a metadata storage worker if the media_profile_id changes" do
+      source = source_fixture()
+      new_profile = media_profile_fixture()
+      update_attrs = %{media_profile_id: new_profile.id}
+
+      assert {:ok, %Source{} = source} = Sources.update_source(source, update_attrs)
+
+      assert_enqueued(worker: SourceMetadataStorageWorker, args: %{"id" => source.id})
+    end
   end
 
   describe "update_source/3 when testing media download tasks" do

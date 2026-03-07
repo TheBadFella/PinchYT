@@ -21,6 +21,7 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
   alias Pinchflat.SlowIndexing.FileFollowerServer
   alias Pinchflat.Downloading.DownloadOptionBuilder
   alias Pinchflat.SlowIndexing.MediaCollectionIndexingWorker
+  alias Pinchflat.Metadata.SourceMetadataStorageWorker
 
   alias Pinchflat.YtDlp.Media, as: YtDlpMedia
 
@@ -245,6 +246,7 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
   # Updates the source after a successful indexing run. This includes:
   # - Setting `last_indexed_at` to the current time
   # - Advancing `download_cutoff_date` to 7 days ago if it's older (or nil)
+  # - Kicking off metadata storage if source images are missing but should be downloaded
   #
   # Advancing the cutoff date prevents yt-dlp from scanning through months of old videos
   # on every index. We use 7 days as a buffer to ensure we don't miss any videos that
@@ -260,6 +262,8 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
       |> maybe_advance_cutoff_date(source.download_cutoff_date, new_cutoff_date)
 
     Sources.update_source(source, update_attrs, run_post_commit_tasks: false)
+
+    maybe_kickoff_metadata_storage_for_missing_images(source)
   end
 
   defp maybe_advance_cutoff_date(attrs, nil, new_cutoff_date) do
@@ -272,5 +276,25 @@ defmodule Pinchflat.SlowIndexing.SlowIndexingHelpers do
     else
       attrs
     end
+  end
+
+  # Kicks off metadata storage if source images should be downloaded but are missing.
+  # This handles the case where:
+  # 1. A source was created before download_source_images was enabled on the profile
+  # 2. The source metadata worker failed or was interrupted
+  # 3. The profile's download_source_images setting was later enabled
+  defp maybe_kickoff_metadata_storage_for_missing_images(source) do
+    source = Repo.preload(source, :media_profile)
+
+    if source.media_profile.download_source_images && source_images_missing?(source) do
+      Logger.info("Source #{source.id} is missing images, kicking off metadata storage")
+      SourceMetadataStorageWorker.kickoff_with_task(source)
+    end
+
+    :ok
+  end
+
+  defp source_images_missing?(source) do
+    is_nil(source.poster_filepath) || is_nil(source.fanart_filepath)
   end
 end

@@ -2,7 +2,7 @@
 
 Issues discovered while debugging Jellyfin artwork problems.
 
-## Issue 1: Source images not downloaded for early sources
+## Issue 1: Source images not downloaded for early sources [COMPLETED]
 
 **Problem:** Sources created before `download_source_images` was added to the media profile have empty `poster_filepath`, `fanart_filepath`, and `banner_filepath` in the `sources` table. The `source_metadata` table may have stale references to files that were never actually downloaded.
 
@@ -19,7 +19,7 @@ Issues discovered while debugging Jellyfin artwork problems.
 2. Downloads missing source images for sources that don't have them
 3. Updates both `sources` and `source_metadata` tables
 
-## Issue 2: Source images not downloaded for some new sources
+## Issue 2: Source images not downloaded for some new sources [COMPLETED]
 
 **Problem:** Some recently added sources have no `source_metadata` entry at all, even though they use a profile with `download_source_images: true`.
 
