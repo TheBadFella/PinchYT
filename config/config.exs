@@ -32,7 +32,10 @@ config :pinchflat,
 
 config :pinchflat, Pinchflat.Repo,
   journal_mode: :wal,
-  pool_size: 5
+  pool_size: 5,
+  # Set busy_timeout to 5 seconds to prevent "Database busy" errors during concurrent operations.
+  # Without this, queries fail immediately when the database is locked instead of waiting.
+  busy_timeout: 5000
 
 # Configures the endpoint
 config :pinchflat, PinchflatWeb.Endpoint,

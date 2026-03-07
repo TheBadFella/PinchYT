@@ -73,7 +73,7 @@ SELECT source_id, metadata_filepath, fanart_filepath, poster_filepath, banner_fi
   - tvshow.nfo
 ```
 
-## Issue 4: SQLite "Database busy" errors blocking job processing
+## Issue 4: SQLite "Database busy" errors blocking job processing [COMPLETED]
 
 **Problem:** The Oban job queue can get stuck with "Database busy" errors, preventing all indexing and download jobs from processing. This occurs when:
 
