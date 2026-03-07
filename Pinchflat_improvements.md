@@ -159,7 +159,7 @@ docker compose start pinchflat
 3. Log more details when indexing jobs fail
 4. Consider a health check that identifies sources with stale/null `last_indexed_at`
 
-## Issue 7: SlowIndexing jobs don't show as "executing" in UI
+## Issue 7: SlowIndexing jobs don't show as "executing" in UI [COMPLETED]
 
 **Problem:** When `MediaCollectionIndexingWorker` (SlowIndexing) jobs start running, they spawn yt-dlp processes but fail to update their job state from `available` to `executing` in the database. This causes:
 
