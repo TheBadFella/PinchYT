@@ -249,11 +249,13 @@ test/
 
 ## Pre-commit Hooks
 
-Lefthook runs on commit:
+Lefthook runs on commit (configured in `lefthook.yml`):
 
-- `prettier` - JS/CSS/YAML/JSON formatting
-- `mix format` - Elixir formatting
-- `typos` - spell checking
-- `actionlint` - GitHub Actions validation
+- `prettier` - JS/CSS/YAML/JSON formatting (runs in Docker)
+- `mix format` - Elixir formatting (runs in Docker)
+- `typos` - spell checking (runs on host)
+- `actionlint` - GitHub Actions validation (runs on host)
+
+**Note:** `prettier` and `mix format` run inside Docker to avoid permission issues. `typos` and `actionlint` run on the host machine.
 
 Bypass if needed: `git commit --no-verify -m "message"`
