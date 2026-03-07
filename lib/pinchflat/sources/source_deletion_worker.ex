@@ -34,5 +34,8 @@ defmodule Pinchflat.Sources.SourceDeletionWorker do
     source = Sources.get_source!(source_id)
 
     Sources.delete_source(source, delete_files: delete_files)
+  rescue
+    Ecto.NoResultsError -> Logger.info("#{__MODULE__} discarded: source #{source_id} not found")
+    Ecto.StaleEntryError -> Logger.info("#{__MODULE__} discarded: source #{source_id} stale")
   end
 end

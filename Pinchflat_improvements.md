@@ -129,7 +129,7 @@ sqlite3 /path/to/pinchflat.db "
 docker compose start pinchflat
 ```
 
-## Issue 5: Orphaned deletion jobs for non-existent sources
+## Issue 5: Orphaned deletion jobs for non-existent sources [COMPLETED]
 
 **Problem:** When a source is deleted, a `SourceDeletionWorker` job is created. If this job fails repeatedly (e.g., due to database busy errors or files already deleted), it keeps retrying indefinitely even after the source no longer exists.
 
