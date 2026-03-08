@@ -442,7 +442,10 @@ Lefthook runs on commit (configured in `lefthook.yml`):
 - `mix format` - Elixir formatting (runs in Docker)
 - `typos` - spell checking (runs on host)
 - `actionlint` - GitHub Actions validation (runs on host)
+- `mix check` - Full CI validation (runs in Docker, requires running container)
 
 **Note:** `prettier` and `mix format` run inside Docker to avoid permission issues. `typos` and `actionlint` run on the host machine.
 
-Bypass if needed: `git commit --no-verify -m "message"`
+**Important:** The `mix check` hook uses `docker compose exec` which requires the phx container to be running. Before committing, ensure the container is started with `docker compose up -d phx`.
+
+**NEVER skip hooks with `--no-verify`.** If a hook fails due to the container not running, start it first.

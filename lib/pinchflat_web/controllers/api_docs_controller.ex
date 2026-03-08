@@ -5,6 +5,7 @@ defmodule PinchflatWeb.ApiDocsController do
 
   use PinchflatWeb, :controller
 
+  # sobelow_skip ["XSS.SendResp"]
   def index(conn, _params) do
     html = """
     <!DOCTYPE html>

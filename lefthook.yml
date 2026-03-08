@@ -13,3 +13,5 @@ pre-commit:
     - name: actionlint
       glob: '.github/workflows/*.{yml,yaml}'
       run: actionlint {staged_files}
+    - name: mix check
+      run: docker compose exec -T phx mix check --no-fix --no-retry
