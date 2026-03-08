@@ -14,7 +14,15 @@ defmodule PinchflatWeb.Sources.SourceController do
   alias Pinchflat.Metadata.SourceMetadataStorageWorker
 
   def index(conn, _params) do
-    render(conn, :index)
+    sources = Sources.list_sources() |> Repo.preload(:media_profile)
+
+    case get_format(conn) do
+      "json" ->
+        conn |> put_status(:ok) |> json(%{data: sources})
+
+      _ ->
+        render(conn, :index)
+    end
   end
 
   def new(conn, params) do
@@ -49,31 +57,52 @@ defmodule PinchflatWeb.Sources.SourceController do
   def create(conn, %{"source" => source_params}) do
     case Sources.create_source(source_params) do
       {:ok, source} ->
-        redirect_location =
-          if Settings.get!(:onboarding), do: ~p"/?onboarding=1", else: ~p"/sources/#{source}"
+        case get_format(conn) do
+          "json" ->
+            source = Repo.preload(source, :media_profile)
+            conn |> put_status(:created) |> json(source)
 
-        conn
-        |> put_flash(:info, "Source created successfully.")
-        |> redirect(to: redirect_location)
+          _ ->
+            redirect_location =
+              if Settings.get!(:onboarding), do: ~p"/?onboarding=1", else: ~p"/sources/#{source}"
+
+            conn
+            |> put_flash(:info, "Source created successfully.")
+            |> redirect(to: redirect_location)
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :new,
-          changeset: changeset,
-          media_profiles: media_profiles(),
-          layout: get_onboarding_layout()
-        )
+        case get_format(conn) do
+          "json" ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{errors: format_changeset_errors(changeset)})
+
+          _ ->
+            render(conn, :new,
+              changeset: changeset,
+              media_profiles: media_profiles(),
+              layout: get_onboarding_layout()
+            )
+        end
     end
   end
 
   def show(conn, %{"id" => id}) do
     source = Repo.preload(Sources.get_source!(id), :media_profile)
 
-    pending_tasks =
-      source
-      |> Tasks.list_tasks_for(nil, [:executing, :available, :scheduled, :retryable])
-      |> Repo.preload(:job)
+    case get_format(conn) do
+      "json" ->
+        conn |> put_status(:ok) |> json(source)
 
-    render(conn, :show, source: source, pending_tasks: pending_tasks)
+      _ ->
+        pending_tasks =
+          source
+          |> Tasks.list_tasks_for(nil, [:executing, :available, :scheduled, :retryable])
+          |> Repo.preload(:job)
+
+        render(conn, :show, source: source, pending_tasks: pending_tasks)
+    end
   end
 
   def edit(conn, %{"id" => id}) do
@@ -88,16 +117,31 @@ defmodule PinchflatWeb.Sources.SourceController do
 
     case Sources.update_source(source, source_params) do
       {:ok, source} ->
-        conn
-        |> put_flash(:info, "Source updated successfully.")
-        |> redirect(to: ~p"/sources/#{source}")
+        case get_format(conn) do
+          "json" ->
+            source = Repo.preload(source, :media_profile)
+            conn |> put_status(:ok) |> json(source)
+
+          _ ->
+            conn
+            |> put_flash(:info, "Source updated successfully.")
+            |> redirect(to: ~p"/sources/#{source}")
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit,
-          source: source,
-          changeset: changeset,
-          media_profiles: media_profiles()
-        )
+        case get_format(conn) do
+          "json" ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{errors: format_changeset_errors(changeset)})
+
+          _ ->
+            render(conn, :edit,
+              source: source,
+              changeset: changeset,
+              media_profiles: media_profiles()
+            )
+        end
     end
   end
 
@@ -106,12 +150,20 @@ defmodule PinchflatWeb.Sources.SourceController do
     delete_files = Map.get(params, "delete_files", "") == "true"
     source = Sources.get_source!(id)
 
-    {:ok, _} = Sources.update_source(source, %{marked_for_deletion_at: DateTime.utc_now()})
+    {:ok, source} = Sources.update_source(source, %{marked_for_deletion_at: DateTime.utc_now()})
     SourceDeletionWorker.kickoff(source, %{delete_files: delete_files})
 
-    conn
-    |> put_flash(:info, "Source deletion started. This may take a while to complete.")
-    |> redirect(to: ~p"/sources")
+    case get_format(conn) do
+      "json" ->
+        conn
+        |> put_status(:ok)
+        |> json(%{message: "Source deletion started. This may take a while to complete."})
+
+      _ ->
+        conn
+        |> put_flash(:info, "Source deletion started. This may take a while to complete.")
+        |> redirect(to: ~p"/sources")
+    end
   end
 
   def force_download_pending(conn, %{"source_id" => id}) do
@@ -180,5 +232,13 @@ defmodule PinchflatWeb.Sources.SourceController do
     else
       {Layouts, :app}
     end
+  end
+
+  defp format_changeset_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%\{(\w+)\}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 end

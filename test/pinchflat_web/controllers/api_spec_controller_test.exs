@@ -11,6 +11,11 @@ defmodule PinchflatWeb.ApiSpecControllerTest do
       assert response["info"]["version"] == "1.0.0"
       assert response["paths"]["/healthcheck"]["get"]["summary"] == "Health check"
       assert response["paths"]["/api/media/recent_downloads"]["get"]["summary"] == "Recent downloads"
+      assert response["paths"]["/sources"]["get"]["summary"] == "List sources"
+      assert response["paths"]["/sources"]["post"]["summary"] == "Create source"
+      assert response["paths"]["/sources/{id}"]["get"]["summary"] == "Get source"
+      assert response["paths"]["/sources/{id}"]["put"]["summary"] == "Update source"
+      assert response["paths"]["/sources/{id}"]["delete"]["summary"] == "Delete source"
     end
   end
 end

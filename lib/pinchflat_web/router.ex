@@ -7,7 +7,7 @@ defmodule PinchflatWeb.Router do
   # the extension from the path
   pipeline :browser do
     plug :basic_auth
-    plug :accepts, ["html"]
+    plug :accepts, ["html", "json"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {PinchflatWeb.Layouts, :root}
