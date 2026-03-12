@@ -1,12 +1,17 @@
 defmodule PinchflatWeb.MediaItems.MediaItemController do
   use PinchflatWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   require Logger
 
+  alias OpenApiSpex.Schema
   alias Pinchflat.Repo
   alias Pinchflat.Media
   alias Pinchflat.Media.MediaItem
   alias Pinchflat.Downloading.MediaDownloadWorker
+  alias PinchflatWeb.Schemas
+
+  tags(["Podcasts"])
 
   def show(conn, %{"id" => id}) do
     media_item =
@@ -68,6 +73,37 @@ defmodule PinchflatWeb.MediaItems.MediaItemController do
   #
   # Uses the UUID instead of the ID to avoid enumeration attacks
   # since streaming is a public endpoint (ie: no auth required)
+  operation(:stream,
+    operation_id: "MediaItems.MediaItemController.stream",
+    summary: "Stream media file",
+    description: """
+    Streams a media file with HTTP Range request support for seeking.
+    Supports partial content delivery (206) for efficient streaming.
+    """,
+    parameters: [
+      uuid: [in: :path, description: "Media item UUID", schema: %Schema{type: :string, format: :uuid}, required: true],
+      range: [
+        in: :header,
+        name: "Range",
+        description: "Byte range for partial content (e.g., 'bytes=0-1023')",
+        schema: %Schema{type: :string, example: "bytes=0-1023"}
+      ]
+    ],
+    responses: [
+      ok: {
+        "Full media file",
+        "video/*",
+        %Schema{type: :string, format: :binary, description: "Media file data"}
+      },
+      partial_content: {
+        "Partial content (for range requests)",
+        "video/*",
+        %Schema{type: :string, format: :binary, description: "Partial media file data"}
+      },
+      not_found: {"Media file not found", "application/json", Schemas.NotFoundResponse}
+    ]
+  )
+
   def stream(conn, %{"uuid" => uuid}) do
     media_item = Repo.get_by!(MediaItem, uuid: uuid)
 

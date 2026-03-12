@@ -1,13 +1,44 @@
 defmodule PinchflatWeb.Api.TaskController do
   use PinchflatWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import Ecto.Query, warn: false
 
+  alias OpenApiSpex.Schema
   alias Pinchflat.Repo
   alias Pinchflat.Tasks
   alias Pinchflat.Tasks.Task
   alias Pinchflat.Sources.Source
   alias Pinchflat.Media.MediaItem
+  alias PinchflatWeb.Schemas
+
+  tags(["Tasks"])
+
+  operation(:index,
+    operation_id: "Api.TaskController.index",
+    summary: "List tasks",
+    description: "Returns a list of background tasks with optional filtering",
+    parameters: [
+      source_id: [in: :query, description: "Filter by source ID", schema: %Schema{type: :integer}],
+      media_item_id: [in: :query, description: "Filter by media item ID", schema: %Schema{type: :integer}],
+      worker: [
+        in: :query,
+        description: "Filter by worker name (e.g., 'MediaDownloadWorker')",
+        schema: %Schema{type: :string}
+      ],
+      state: [
+        in: :query,
+        description: "Filter by job state",
+        schema: %Schema{
+          type: :string,
+          enum: ["available", "scheduled", "executing", "retryable", "completed", "discarded", "cancelled"]
+        }
+      ]
+    ],
+    responses: [
+      ok: {"List of tasks", "application/json", Schemas.TasksListResponse}
+    ]
+  )
 
   def index(conn, params) do
     tasks =
@@ -82,6 +113,19 @@ defmodule PinchflatWeb.Api.TaskController do
     |> json(%{data: serialized_tasks})
   end
 
+  operation(:show,
+    operation_id: "Api.TaskController.show",
+    summary: "Get task",
+    description: "Returns details for a specific task",
+    parameters: [
+      id: [in: :path, description: "Task ID", schema: %Schema{type: :integer}, required: true]
+    ],
+    responses: [
+      ok: {"Task details", "application/json", Schemas.Task},
+      not_found: {"Task not found", "application/json", Schemas.NotFoundResponse}
+    ]
+  )
+
   def show(conn, %{"id" => id}) do
     task = Tasks.get_task!(id) |> Repo.preload(:job)
 
@@ -113,6 +157,19 @@ defmodule PinchflatWeb.Api.TaskController do
       |> json(serialized_task)
     end
   end
+
+  operation(:delete,
+    operation_id: "Api.TaskController.delete",
+    summary: "Cancel task",
+    description: "Cancels and deletes a task",
+    parameters: [
+      id: [in: :path, description: "Task ID", schema: %Schema{type: :integer}, required: true]
+    ],
+    responses: [
+      ok: {"Task cancelled successfully", "application/json", Schemas.ActionResponse},
+      not_found: {"Task not found", "application/json", Schemas.NotFoundResponse}
+    ]
+  )
 
   def delete(conn, %{"id" => id}) do
     task = Tasks.get_task!(id)

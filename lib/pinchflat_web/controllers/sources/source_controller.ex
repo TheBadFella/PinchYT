@@ -1,7 +1,9 @@
 defmodule PinchflatWeb.Sources.SourceController do
   use PinchflatWeb, :controller
+  use OpenApiSpex.ControllerSpecs
   use Pinchflat.Sources.SourcesQuery
 
+  alias OpenApiSpex.Schema
   alias Pinchflat.Repo
   alias Pinchflat.Tasks
   alias Pinchflat.Sources
@@ -12,6 +14,18 @@ defmodule PinchflatWeb.Sources.SourceController do
   alias Pinchflat.Downloading.DownloadingHelpers
   alias Pinchflat.SlowIndexing.SlowIndexingHelpers
   alias Pinchflat.Metadata.SourceMetadataStorageWorker
+  alias PinchflatWeb.Schemas
+
+  tags(["Sources"])
+
+  operation(:index,
+    operation_id: "Sources.SourceController.index",
+    summary: "List sources",
+    description: "Returns a list of all sources",
+    responses: [
+      ok: {"List of sources", "application/json", Schemas.SourcesListResponse}
+    ]
+  )
 
   def index(conn, _params) do
     sources = Sources.list_sources() |> Repo.preload(:media_profile)
@@ -54,6 +68,17 @@ defmodule PinchflatWeb.Sources.SourceController do
     )
   end
 
+  operation(:create,
+    operation_id: "Sources.SourceController.create",
+    summary: "Create source",
+    description: "Creates a new source from a YouTube channel or playlist URL",
+    request_body: {"Source creation parameters", "application/json", Schemas.CreateSourceRequest},
+    responses: [
+      created: {"Source created successfully", "application/json", Schemas.Source},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ValidationErrorResponse}
+    ]
+  )
+
   def create(conn, %{"source" => source_params}) do
     case Sources.create_source(source_params) do
       {:ok, source} ->
@@ -88,6 +113,19 @@ defmodule PinchflatWeb.Sources.SourceController do
     end
   end
 
+  operation(:show,
+    operation_id: "Sources.SourceController.show",
+    summary: "Get source",
+    description: "Returns details for a specific source",
+    parameters: [
+      id: [in: :path, description: "Source ID", schema: %Schema{type: :integer}, required: true]
+    ],
+    responses: [
+      ok: {"Source details", "application/json", Schemas.Source},
+      not_found: {"Source not found", "application/json", Schemas.NotFoundResponse}
+    ]
+  )
+
   def show(conn, %{"id" => id}) do
     source = Repo.preload(Sources.get_source!(id), :media_profile)
 
@@ -111,6 +149,21 @@ defmodule PinchflatWeb.Sources.SourceController do
 
     render(conn, :edit, source: source, changeset: changeset, media_profiles: media_profiles())
   end
+
+  operation(:update,
+    operation_id: "Sources.SourceController.update",
+    summary: "Update source",
+    description: "Updates an existing source",
+    parameters: [
+      id: [in: :path, description: "Source ID", schema: %Schema{type: :integer}, required: true]
+    ],
+    request_body: {"Source update parameters", "application/json", Schemas.UpdateSourceRequest},
+    responses: [
+      ok: {"Source updated successfully", "application/json", Schemas.Source},
+      not_found: {"Source not found", "application/json", Schemas.NotFoundResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ValidationErrorResponse}
+    ]
+  )
 
   def update(conn, %{"id" => id, "source" => source_params}) do
     source = Sources.get_source!(id)
@@ -144,6 +197,31 @@ defmodule PinchflatWeb.Sources.SourceController do
         end
     end
   end
+
+  operation(:delete,
+    operation_id: "Sources.SourceController.delete",
+    summary: "Delete source",
+    description: "Deletes a source and optionally its associated media files",
+    parameters: [
+      id: [in: :path, description: "Source ID", schema: %Schema{type: :integer}, required: true],
+      delete_files: [
+        in: :query,
+        description: "Also delete associated media files from disk",
+        schema: %Schema{type: :boolean, default: false}
+      ]
+    ],
+    responses: [
+      ok: {
+        "Source deletion started",
+        "application/json",
+        %Schema{
+          type: :object,
+          properties: %{message: %Schema{type: :string}}
+        }
+      },
+      not_found: {"Source not found", "application/json", Schemas.NotFoundResponse}
+    ]
+  )
 
   def delete(conn, %{"id" => id} = params) do
     # This awkward comparison converts the string to a boolean

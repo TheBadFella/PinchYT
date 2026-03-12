@@ -4,6 +4,24 @@ defmodule PinchflatWeb.ApiSpecController do
   """
 
   use PinchflatWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
+  alias OpenApiSpex.Schema
+
+  tags(["System"])
+
+  operation(:spec,
+    operation_id: "ApiSpecController.spec",
+    summary: "OpenAPI specification",
+    description: "Returns the OpenAPI 3.0 specification document for this API",
+    responses: [
+      ok: {
+        "OpenAPI specification JSON",
+        "application/json",
+        %Schema{type: :object, description: "OpenAPI 3.0 specification"}
+      }
+    ]
+  )
 
   def spec(conn, _params) do
     spec =
