@@ -76,15 +76,20 @@ defmodule PinchflatWeb.Schemas do
           description: "Livestream handling behavior",
           example: :include
         },
-        audio_track: %Schema{type: :string, description: "Preferred audio track", example: nil},
+        audio_track: %Schema{type: :string, nullable: true, description: "Preferred audio track", example: nil},
         preferred_resolution: %Schema{
           type: :string,
           enum: [:"4320p", :"2160p", :"1440p", :"1080p", :"720p", :"480p", :"360p", :audio],
           description: "Preferred video resolution",
           example: :"1080p"
         },
-        media_container: %Schema{type: :string, description: "Media container format", example: "mp4"},
-        redownload_delay_days: %Schema{type: :integer, description: "Delay before redownloading", example: nil},
+        media_container: %Schema{type: :string, nullable: true, description: "Media container format", example: "mp4"},
+        redownload_delay_days: %Schema{
+          type: :integer,
+          nullable: true,
+          description: "Delay before redownloading",
+          example: nil
+        },
         inserted_at: %Schema{type: :string, format: :date_time, description: "Creation timestamp"},
         updated_at: %Schema{type: :string, format: :date_time, description: "Last update timestamp"}
       },
@@ -113,15 +118,27 @@ defmodule PinchflatWeb.Schemas do
         },
         enabled: %Schema{type: :boolean, description: "Whether the source is active", example: true},
         custom_name: %Schema{type: :string, description: "Display name for the source", example: "My Channel"},
-        description: %Schema{type: :string, description: "Source description", example: "A collection of videos"},
+        description: %Schema{
+          type: :string,
+          nullable: true,
+          description: "Source description",
+          example: "A collection of videos"
+        },
         collection_name: %Schema{
           type: :string,
+          nullable: true,
           description: "Original collection name",
           example: "Original Channel Name"
         },
-        collection_id: %Schema{type: :string, description: "External collection ID", example: "UCxxxxxxxxxxxxxxxxxxx"},
+        collection_id: %Schema{
+          type: :string,
+          nullable: true,
+          description: "External collection ID",
+          example: "UCxxxxxxxxxxxxxxxxxxx"
+        },
         collection_type: %Schema{
           type: :string,
+          nullable: true,
           enum: [:channel, :playlist],
           description: "Type of collection",
           example: :channel
@@ -134,17 +151,31 @@ defmodule PinchflatWeb.Schemas do
         index_frequency_minutes: %Schema{type: :integer, description: "Indexing frequency in minutes", example: 1440},
         fast_index: %Schema{type: :boolean, description: "Use fast indexing", example: false},
         download_media: %Schema{type: :boolean, description: "Download media items", example: true},
-        last_indexed_at: %Schema{type: :string, format: :date_time, description: "Last indexing timestamp"},
-        download_cutoff_date: %Schema{type: :string, format: :date, description: "Only download media after this date"},
-        retention_period_days: %Schema{type: :integer, description: "Delete media older than this many days"},
-        title_filter_regex: %Schema{type: :string, description: "Regex to filter media titles"},
-        min_duration_seconds: %Schema{type: :integer, description: "Minimum media duration"},
-        max_duration_seconds: %Schema{type: :integer, description: "Maximum media duration"},
-        series_directory: %Schema{type: :string, description: "Directory for series organization"},
-        nfo_filepath: %Schema{type: :string, description: "Path to NFO file"},
-        poster_filepath: %Schema{type: :string, description: "Path to poster image"},
-        fanart_filepath: %Schema{type: :string, description: "Path to fanart image"},
-        banner_filepath: %Schema{type: :string, description: "Path to banner image"},
+        last_indexed_at: %Schema{
+          type: :string,
+          format: :date_time,
+          nullable: true,
+          description: "Last indexing timestamp"
+        },
+        download_cutoff_date: %Schema{
+          type: :string,
+          format: :date,
+          nullable: true,
+          description: "Only download media after this date"
+        },
+        retention_period_days: %Schema{
+          type: :integer,
+          nullable: true,
+          description: "Delete media older than this many days"
+        },
+        title_filter_regex: %Schema{type: :string, nullable: true, description: "Regex to filter media titles"},
+        min_duration_seconds: %Schema{type: :integer, nullable: true, description: "Minimum media duration"},
+        max_duration_seconds: %Schema{type: :integer, nullable: true, description: "Maximum media duration"},
+        series_directory: %Schema{type: :string, nullable: true, description: "Directory for series organization"},
+        nfo_filepath: %Schema{type: :string, nullable: true, description: "Path to NFO file"},
+        poster_filepath: %Schema{type: :string, nullable: true, description: "Path to poster image"},
+        fanart_filepath: %Schema{type: :string, nullable: true, description: "Path to fanart image"},
+        banner_filepath: %Schema{type: :string, nullable: true, description: "Path to banner image"},
         media_profile_id: %Schema{type: :integer, description: "ID of associated media profile"},
         media_profile: %Schema{
           allOf: [MediaProfile],
@@ -192,31 +223,37 @@ defmodule PinchflatWeb.Schemas do
         media_downloaded_at: %Schema{
           type: :string,
           format: :date_time,
+          nullable: true,
           description: "When the media was downloaded",
           example: "2024-01-02T10:30:00Z"
         },
         media_filepath: %Schema{
           type: :string,
+          nullable: true,
           description: "Path to the downloaded media file",
           example: "/downloads/video.mp4"
         },
         thumbnail_filepath: %Schema{
           type: :string,
+          nullable: true,
           description: "Path to the thumbnail file",
           example: "/downloads/thumbnail.jpg"
         },
         metadata_filepath: %Schema{
           type: :string,
+          nullable: true,
           description: "Path to the metadata file",
           example: "/downloads/metadata.json"
         },
         nfo_filepath: %Schema{
           type: :string,
+          nullable: true,
           description: "Path to the NFO file",
           example: "/downloads/video.nfo"
         },
         subtitle_filepaths: %Schema{
           type: :array,
+          nullable: true,
           items: %Schema{type: :string},
           description: "Paths to subtitle files",
           example: ["/downloads/subtitle_en.srt", "/downloads/subtitle_de.srt"]
@@ -689,6 +726,49 @@ defmodule PinchflatWeb.Schemas do
         message: %Schema{type: :string, description: "Success message", example: "Action completed successfully"}
       },
       required: [:message]
+    })
+  end
+
+  defmodule NotFoundResponse do
+    @moduledoc """
+    Schema for 404 not found responses.
+    """
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "NotFoundResponse",
+      description: "Resource not found error",
+      type: :object,
+      properties: %{
+        error: %Schema{type: :string, description: "Error message", example: "Not found"}
+      }
+    })
+  end
+
+  defmodule ValidationErrorResponse do
+    @moduledoc """
+    Schema for 422 validation error responses.
+    """
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ValidationErrorResponse",
+      description: "Validation error response",
+      type: :object,
+      properties: %{
+        errors: %Schema{
+          type: :object,
+          description: "Validation errors by field",
+          additionalProperties: %Schema{
+            type: :array,
+            items: %Schema{type: :string}
+          },
+          example: %{"name" => ["can't be blank"]}
+        }
+      },
+      required: [:errors]
     })
   end
 end
