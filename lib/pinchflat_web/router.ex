@@ -18,6 +18,7 @@ defmodule PinchflatWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: PinchflatWeb.ApiSpec
   end
 
   scope "/", PinchflatWeb do
