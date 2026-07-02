@@ -15,40 +15,35 @@ multi-ecosystem-groups:
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
-    groups:
-      dependencies:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dependencies"
     rebase-strategy: "auto"
 
   - package-ecosystem: "mix"
     directory: "/"
-    groups:
-      dependencies:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dependencies"
     rebase-strategy: "auto"
 
   - package-ecosystem: "npm"
     directory: "/"
-    groups:
-      dependencies:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dependencies"
     rebase-strategy: "auto"
 
   - package-ecosystem: "npm"
     directory: "/assets"
-    groups:
-      dependencies:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dependencies"
     rebase-strategy: "auto"
 
   - package-ecosystem: "docker"
     directory: "/docker"
-    groups:
-      dependencies:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dependencies"
     rebase-strategy: "auto"
